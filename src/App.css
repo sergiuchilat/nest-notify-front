@@ -1,0 +1,41 @@
+#notification-receivers{
+  width: 100%;
+}
+
+.notification-create-form{
+  width: 50em;
+  margin: 0 auto;
+  border: 1px solid grey;
+  border-radius: 10px;
+  padding: 2em;
+  margin-top: 2em;
+}
+
+.notification-create-form .form-element {
+  display: grid;
+  grid-template-columns: 10em auto;
+}
+
+.notify-toast{
+  position: fixed;
+  bottom: 0;
+  right: 0;
+  margin: 1em;
+  padding: 1em;
+  border-radius: 10px;
+  background-color: #fff;
+  box-shadow: 0 0 10px rgba(0,0,0,0.2);
+  z-index: 1000;
+}
+
+.notify-counter{
+  position: fixed;
+  top: 0;
+  right: 0;
+  margin: 1em;
+  padding: 1em;
+  border-radius: 10px;
+  background-color: #fff;
+  box-shadow: 0 0 10px rgba(0,0,0,0.2);
+  z-index: 1000;
+}
