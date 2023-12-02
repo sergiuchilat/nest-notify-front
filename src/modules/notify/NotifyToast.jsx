@@ -19,6 +19,7 @@ export default function NotifyToast() {
     })
 
     socketClient.on('notification.internal.created', (data) => {
+        console.log(data.receiver, clientUuid);
         if(data.receiver === clientUuid){
             setNotifySubject(data.subject);
             setNotifyUuid(data.uuid)

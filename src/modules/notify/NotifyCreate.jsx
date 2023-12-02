@@ -3,19 +3,24 @@ import axios from "axios";
 
 export default function NotifyCreate(){
     const [selectedChannel, setSelectedChannel] = useState('Internal')
-    const [subject, setSubject] = useState('You have a new candidate at the interview')
-    const [body, setBody] = useState('Tudor Turcanu, DM/POL/SOLA/24')
+    const [subjectEN, setSubjectEN] = useState('You have a new candidate at the interview')
+    const [subjectRO, setSubjectRO] = useState('Aveti un nou candidat la interviu')
+    const [subjectRU, setSubjectRU] = useState('У вас новый кандидат на интервью')
+    const [bodyEN, setBodyEN] = useState(`John Doe, DM/POL/SOLA/24 Acces <a href="https://am.com/ro/leads/for-sales/95508">this link</a> and the candidate's card will open in CRM`)
+    const [bodyRO, setBodyRO] = useState(`John Doe, DM/POL/SOLA/24 Apasa pe <a href="https://am.com/ro/leads/for-sales/95508">acest link</a> si se va deschide cartela candidatului in CRM`)
+    const [bodyRU, setBodyRU] = useState(`John Doe, DM/POL/SOLA/24 Кликни <a href="https://am.com/ro/leads/for-sales/95508">на ссылку</a> и откроется карточка кандидата в CRM`)
     const [sender, setSender] = useState('123e4567-e89b-12d3-a456-426614174000')
-    const [telegramSubscriberUuid, setTelegramSubscriberUuid] = useState('0537c294-9424-48b7-af77-bf48ed7e94b2');
+    const [telegramSubscriberUuid, setTelegramSubscriberUuid] = useState(localStorage.getItem('clientUuid'));
     const [telegramSubscriberLanguage, setTelegramSubscriberLanguage] = useState('EN');
 
     const [receivers, setReceivers] = useState([
-        '0537c294-9424-48b7-af77-bf48ed7e94b2'
+        localStorage.getItem('clientUuid')
     ])
 
     const channels = [
         'Internal',
-        'Telegram'
+        'Telegram',
+        'Email'
     ]
 
     const createNotification = async () => {
@@ -23,52 +28,132 @@ export default function NotifyCreate(){
             await createNotificationInternal()
         } else if(selectedChannel === 'Telegram'){
             await createNotificationTelegram()
+        } else if(selectedChannel === 'Email'){
+            await createNotificationEmail()
         }
     }
 
     const createNotificationInternal = async () => {
+        const translations = [];
+        if(subjectEN && bodyEN){
+            translations.push({
+                subject: subjectEN,
+                body: bodyEN,
+                language: 'EN'
+            })
+        }
+        if(subjectRO && bodyRO){
+            translations.push({
+                subject: subjectRO,
+                body: bodyRO,
+                language: 'RO'
+            })
+        }
+        if(subjectRU && bodyRU){
+            translations.push({
+                subject: subjectRU,
+                body: bodyRU,
+                language: 'RU'
+            })
+        }
         const data = {
             sender_uuid: sender,
             receivers,
-            content: [
-                {
-                    subject,
-                    body,
-                    language: 'EN'
-                }
-            ]
+            translations
         }
         const url = 'http://localhost:3000/notifications/internal'
         try {
-            const response = await axios.post(url, data)
-            //console.log(response)
+            await axios.post(url, data)
+            alert('Internal notification sent')
         } catch (e) {
-            console.log(e)
+            alert(e.response.data.message)
         }
-
     }
 
     const createNotificationTelegram = async () => {
-
+        let body = bodyEN;
+        let subject = subjectEN;
+        if(telegramSubscriberLanguage === 'RO'){
+            body = bodyRO
+            subject = subjectRO
+        } else if(telegramSubscriberLanguage === 'RU'){
+            body = bodyRU
+            subject = subjectRU
+        }
         const data = {
-            sender_uuid: sender,
             receivers,
             subject,
-            body: body + ' <a href="https://domain.com/ro/leads/for-sales/95508">Open</a>',
+            body,
+            language: telegramSubscriberLanguage
         }
         const url = 'http://localhost:3000/notifications/telegram'
         try {
-            const response = await axios.post(url, data)
-            //console.log(response)
+            await axios.post(url, data)
+            alert('Telegram notification sent')
         } catch (e) {
+            alert(e.response.data.message)
+        }
+    }
+
+    const createNotificationEmail = async () => {
+        let body = bodyEN;
+        let subject = subjectEN;
+        if(telegramSubscriberLanguage === 'RO'){
+            body = bodyRO
+            subject = subjectRO
+        } else if(telegramSubscriberLanguage === 'RU'){
+            body = bodyRU
+            subject = subjectRU
+        }
+        const data = {
+            receivers,
+            subject,
+            body,
+            language: telegramSubscriberLanguage
+        }
+        const url = 'http://localhost:3000/notifications/mail'
+        try {
+            await axios.post(url, data)
+            alert('Email sent')
+        } catch (e) {
+            alert(e.response.data.message)
+        }
+    }
+
+    const subscribeToTelegram = async () => {
+
+        const subscribeUrl = `http://localhost:3000/notifications/telegram/subscribe/${telegramSubscriberUuid}/${telegramSubscriberLanguage}`
+        try {
+            const response = await axios.post(subscribeUrl, {})
+            console.log(response.data?.receiver_uuid)
+            if(response.data?.receiver_uuid){
+                const id = Number(response.data?.id);
+                const telegramUrl = `https://t.me/NestNotifyBot?start=${telegramSubscriberUuid}---${telegramSubscriberLanguage}---${id}`
+                window.open(telegramUrl, '_blank')
+            }
+        } catch (e) {
+            alert(e.response.data.message)
             console.log(e)
         }
 
     }
 
-    const subscribeToTelegram = async () => {
-        const url = `https://t.me/NestNotifyBot?start=${telegramSubscriberUuid}---${telegramSubscriberLanguage}`
-        window.open(url, '_blank')
+    const unsubscribeFromTelegram = async () => {
+
+        const subscribeUrl = `http://localhost:3000/notifications/telegram/unsubscribe/${telegramSubscriberUuid}`
+        try {
+            const response = await axios.delete(subscribeUrl, {})
+            console.log(response.data)
+            if(response.data?.affected){
+                alert('Unsubscribed')
+            } else {
+                alert('Not subscribed')
+            }
+        } catch (e) {
+            alert(e.response.data.message)
+            console.log(e)
+        }
+
     }
 
     return (
@@ -76,23 +161,63 @@ export default function NotifyCreate(){
 
             <h1>NotifyCreate</h1>
             <div className={'form-element'}>
-                <label>Subject</label>
+                <label>Subject EN</label>
                 <input
                     type="text"
-                    value={subject}
+                    value={subjectEN}
                     onChange={(e) => {
-                        setSubject(e.target.value)
+                        setSubjectEN(e.target.value)
                     }}
                 />
             </div>
             <div className={'form-element'}>
-                <label>Body</label>
+                <label>Subject RO</label>
                 <input
                     type="text"
-                    value={body}
+                    value={subjectRO}
                     onChange={(e) => {
-                        setBody(e.target.value)
+                        setSubjectRO(e.target.value)
                     }}
+                />
+            </div>
+            <div className={'form-element'}>
+                <label>Subject RU</label>
+                <input
+                    type="text"
+                    value={subjectRU}
+                    onChange={(e) => {
+                        setSubjectRU(e.target.value)
+                    }}
+                />
+            </div>
+            <div className={'form-element'}>
+                <label>Body EN</label>
+                <textarea
+                    value={bodyEN}
+                    onChange={(e) => {
+                        setBodyEN(e.target.value)
+                    }}
+                    rows={10}
+                />
+            </div>
+            <div className={'form-element'}>
+                <label>Body RO</label>
+                <textarea
+                    value={bodyRO}
+                    onChange={(e) => {
+                        setBodyRO(e.target.value)
+                    }}
+                    rows={10}
+                />
+            </div>
+            <div className={'form-element'}>
+                <label>Body RU</label>
+                <textarea
+                    value={bodyRU}
+                    onChange={(e) => {
+                        setBodyRU(e.target.value)
+                    }}
+                    rows={10}
                 />
             </div>
             <div className={'form-element'}>
@@ -172,6 +297,7 @@ export default function NotifyCreate(){
             </div>
             <div>
                 <button onClick={subscribeToTelegram}>Subscribe to telegram Notifications</button>
+                <button onClick={unsubscribeFromTelegram}>Unsubscribe from telegram Notifications</button>
             </div>
         </div>
     )
