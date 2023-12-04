@@ -21,7 +21,7 @@ export default function NotifyToast() {
     socketClient.on('notification.internal.created', (data) => {
         console.log(data.receiver, clientUuid);
         if(data.receiver === clientUuid){
-            setNotifySubject(data.subject);
+            setNotifySubject(data.translations.find(item => item.language === language).subject);
             setNotifyUuid(data.uuid)
             setNotifyVisible(true);
             setTimeout(() => {

@@ -20,6 +20,7 @@ export default function NotifyCreate(){
     const channels = [
         'Internal',
         'Telegram',
+        'Discord',
         'Email'
     ]
 

@@ -13,10 +13,10 @@ export default function NotifyCounter({ counter }) {
         console.log("disconnect");
     })
 
-    socketClient.on('notification.internal.created', (data) => {
+    socketClient.on('notification.internal.unread-count', (data) => {
 
         if(data.receiver === clientUuid){
-            setNotifyCount(notifyCount + 1);
+            setNotifyCount(Number(data.count));
         }
     })
 
